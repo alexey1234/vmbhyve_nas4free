@@ -1,0 +1,76 @@
+#!/bin/sh
+#-------------------------------------------------------------------------+
+# Copyright (C) 2015 Matt Churchyard (churchers@gmail.com)
+# All rights reserved
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted providing that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+# IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+VERSION=0.9.18
+PATH=${PATH}:/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin
+BSD_VERSION=$(uname -K)
+
+. /etc/rc.subr
+load_rc_config "vm"
+
+# get libs
+if [ -e "./lib/vm-core" ]; then
+    LIB="./lib"
+elif [ -e "/usr/local/lib/vm-bhyve" ]; then
+    LIB="/usr/local/lib/vm-bhyve"
+else
+    echo "unable to locate vm-bhyve libriaries"
+    exit 1
+fi
+
+# load libs
+. "${LIB}/vm-cmd"
+. "${LIB}/vm-common"
+. "${LIB}/vm-config"
+. "${LIB}/vm-core"
+. "${LIB}/vm-guest"
+. "${LIB}/vm-info"
+. "${LIB}/vm-run"
+. "${LIB}/vm-switch"
+. "${LIB}/vm-sysrc"
+. "${LIB}/vm-zfs"
+
+# check environment
+[ `id -u` -ne 0 ] && __err "virtual machines can only be managed by root"
+[ ${BSD_VERSION} -lt 1000000 ] && __err "please upgrade to FreeBSD 10 or newer for bhyve support"
+
+# we should be enabled in rc.conf
+# or call it using forcestart
+if [ -z "$rc_force" ] && ! checkyesno vm_enable; then
+    __err "\$vm_enable is not enabled in /etc/rc.conf!"
+fi
+
+# init for zfs
+__zfs_init
+
+# create directories as needed
+[ ! -d "${vm_dir}" ] && __err "\$vm_dir has not been configured or is not a valid directory"
+[ ! -d "${vm_dir}/.config" ] && mkdir "${vm_dir}/.config"
+[ ! -e "${vm_dir}/.config/null.iso" ] && touch "${vm_dir}/.config/null.iso"
+[ ! -d "${vm_dir}/.templates" ] && mkdir "${vm_dir}/.templates"
+[ ! -d "${vm_dir}/.iso" ] && mkdir "${vm_dir}/.iso"
+
+__parse_cmd "$@"

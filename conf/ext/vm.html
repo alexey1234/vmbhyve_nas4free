@@ -1,0 +1,577 @@
+<HTML>
+<BODY>
+<H2>SYNOPSIS</H2>
+<PRE>
+<!-- Manpage converted by man2html 3.0.1 -->
+
+     <B>vm</B>	<B>switch</B> <B>list</B>
+     <B>vm</B>	<B>switch</B> <B>info</B> [<I>name</I>]
+     <B>vm</B>	<B>switch</B> <B>create</B> <I>name</I>
+     <B>vm</B>	<B>switch</B> <B>import</B> <I>name</I> <I>bridge</I>
+     <B>vm</B>	<B>switch</B> <B>vlan</B> <I>name</I> <I>vlan-id</I>
+     <B>vm</B>	<B>switch</B> <B>nat</B> <I>name</I>	<I>on|off</I>
+     <B>vm</B>	<B>switch</B> <B>add</B> <I>name</I>	<I>interface</I>
+     <B>vm</B>	<B>switch</B> <B>remove</B> <I>name</I> <I>interface</I>
+     <B>vm</B>	<B>switch</B> <B>destroy</B> <I>name</I>
+
+     <B>vm</B>	<B>create</B> [<B>-t</B> <I>template</I>] [<B>-s</B> <I>size</I>] <I>name</I>
+     <B>vm</B>	<B>destroy</B>	<I>name</I>
+     <B>vm</B>	<B>list</B>
+     <B>vm</B>	<B>info</B> [<I>name</I>]
+     <B>vm</B>	<B>install</B>	<I>name</I> <I>iso</I>
+     <B>vm</B>	<B>start</B> <I>name</I>
+     <B>vm</B>	<B>stop</B> <I>name</I>
+     <B>vm</B>	<B>console</B>	<I>name</I> [<I>com1|com2</I>]
+     <B>vm</B>	<B>rename</B> <I>name</I> <I>new-name</I>
+     <B>vm</B>	<B>add</B> [<B>-d</B>	<I>device</I>]	[<B>-t</B> <I>type</I>] [<B>-s</B> <I>size|switch</I>] <I>name</I>
+     <B>vm</B>	<B>reset</B> <I>name</I>
+     <B>vm</B>	<B>poweroff</B> <I>name</I>
+     <B>vm</B>	<B>startall</B>
+     <B>vm</B>	<B>stopall</B>
+     <B>vm</B>	<B>configure</B> <I>name</I>
+     <B>vm</B>	<B>clone</B> <I>name</I> <I>new-name</I>
+     <B>vm</B>	<B>snapshot</B> [<B>-f</B>] <I>name|name@snapshot</I>
+     <B>vm</B>	<B>rollback</B> [<B>-r</B>] <I>name@snapshot</I>
+
+     <B>vm</B>	<B>iso</B> [<I>url</I>]
+
+     <B>vm</B>	<B>image</B> <B>list</B>
+     <B>vm</B>	<B>image</B> <B>create</B> [<B>-d</B> <I>description</I>] <I>name</I>
+     <B>vm</B>	<B>image</B> <B>provision</B>	<I>uuid</I> <I>new-name</I>
+     <B>vm</B>	<B>image</B> <B>destroy</B> <I>uuid</I>
+
+
+</PRE>
+<H2>DESCRIPTION</H2><PRE>
+     The <B>vm</B> utility is used to provide simplified management of	<B>bhyve(8)</B> vir-
+     tual machines, including networking and console access.
+
+     Networking	is handled by creating one or more virtual switches. Each
+     switch has	a simple name which is referenced in the virtual machine con-
+     figuration	file.  The <B>vm</B> utility automatically creates a <B>bridge(4)</B>	device
+     for each virtual switch and assigns virtual machine <B>tap(4)</B>	interfaces
+     dynamically.
+
+     All configuration for virtual machines is stored in a simple rc style
+     configuration file. When virtual machines are first created, the configu-
+     ration file is copied from	a template which can be	specified by the user.
+     Multiple templates	can be created providing an easy way to	provision
+     guests with specific configurations.
+	   <font color=\"green\">vm_enable="YES"  - <b>DONE, Extension do it</b></font>
+	   <font color=\"green\">vm_dir="/mnt/PATH/TO/vm_bhyve"     - <b>DONE, Extension do it</b></font>
+	   vm_list=""
+	   vm_delay="5"
+
+     The first and second lines	are required to	enable the <B>vm</B> utiltity.	Please
+     see the <B>startall</B> command description for more information on the third
+     and fourth	settings.
+
+     Now run the <B>vm</B> <B>init</B> command to finish initialisation. This	will create
+     subdirectories inside <I>$vm</I><B>_</B><I>dir</I> to hold configuration and templates.	It
+     will also load any	required kernel	modules.  This command needs to	be run
+     on	each boot, which is normally handled by	the rc.d script.
+
+     Copy the sample templates into the	directory <I>$vm</I><B>_</B><I>dir/.templates/</I>.	You
+     can create	and edit the templates as required. It is recommended to keep
+     a template	called <I>default.conf</I>, as	this will be used when no template is
+     manually specified.
+
+
+</PRE>
+<H2>ZFS</H2><PRE>
+     If	you are	using a	ZFS dataset to store your virtual machines, and	want a
+     new child dataset created for each	one, specify the dataset to use	in
+     <I>/etc/rc.conf</I> as follows:
+
+	   $vm_dir="zfs:pool/dataset"
+
+     In	contrast to earlier versions, if <I>$vm</I><B>_</B><I>dir</I> is a normal path, a standard
+     subdirectory will be created for each virtual machine, regardless of the
+     file system type. However,	<B>vm</B> is now able to handle situations where the
+     dataset mountpoint	does not match the dataset name.
+
+
+</PRE>
+<H2>QUICKSTART</H2><PRE>
+     Create a virtual switch called <B>public</B> (which is the switch	name specified
+     in	the default templates) and attach it to	a real interface.  Use your
+     own interface in place of <B>em0</B> as required.
+
+	  # vm switch create public
+	  # vm switch add public em0
+
+     Download an ISO file to use for installation:
+
+	  # vm iso ftp://ftp.freebsd.org/pub/FreeBSD/releases/ISO-IMAGES/10.1/FreeBSD-10.1-RELEASE-amd64-disc1.iso
+
+     Create a new guest	using the default template and disk size, then start
+     the installation. The <I>install</I> subcommand will pause while the guest boot
+     loader completes. Once successfully loaded, use the <I>console</I> command to
+     complete the installation.
+
+	  # vm create my-guest
+	  # vm install my-guest	FreeBSD-10.1-RELEASE-amd64-disc1.iso
+	  # vm console my-guest
+
+     Please note that Linux guests currently require the <B>sysutils/grub2-bhyve</B>
+     package to	be installed. (<font color=\"green\">NAS4Free have it</font>) This is use in place of <B>bhyveload(8)</B> to load the
+     below.
+
+     Once the installation ISO is ready, has been placed in the	<I>$vm</I><B>_</B><I>dir/.iso</I>
+     directory,	and you	have the UEFI firmware,	installation can be performed
+     as	normal.
+
+	   # vm	create -t windows -s 30G winguest
+	   # vm	install	winguest win_repack.iso
+
+     Windows installation has been tested with 2012r2 and takes	around 20-25
+     minutes.  During install, the guest will reboot twice (three runs in
+     total). You can see the guest reboot by watching the log file
+     <I>$vm</I><B>_</B><I>dir/guestname/vm-bhyve.log</I>.  The third	run should boot	fully into
+     Windows. The <B>virtio</B> network adapter will request an IP address using
+     DHCP. Connect to the guest	console	and press <B>i</B> to see the IP address that
+     has been assigned.	The default unattended installation files should make
+     RDP available, using Administrator	and Test123 as the default login
+     details.
+
+     The UEFI firmware (BHYVE_UEFI_20151002.fd), as well as instructions for
+     creating an unattended installation ISO can currently be obtained from
+     <I>https://people.freebsd.org/~grehan/bhyve</I><B>_</B><I>uefi/</I>
+
+
+</PRE>
+<H2>SUBCOMMANDS</H2><PRE>
+     <B>init</B>
+	     This should be run	once after each	host reboot before running any
+	     other <B>vm</B> commands.	The main function of the <B>init</B> command is as
+	     follows:
+
+	     o Load all	necessary kernel modules if not	already	loaded
+	     o Set tap devices to come up automatically	when opened
+	     o Create any configured virtual switches
+
+     <B>switch</B> <B>list</B>
+	     List virtual switches. This reads all configured virtual switches
+	     from the <I>$vm</I><B>_</B><I>dir/.config/switch</I> file and displays them. If	the
+	     virtual switches are loaded, it also tries	to display the
+	     <B>bridge(4)</B> interface that has been assigned	to each	one.
+
+     <B>switch</B> <B>info</B> [<I>name</I>]
+	     This command shows	detailed information about the specified vir-
+	     tual switch.  If no switch	name is	provided, information is out-
+	     put for all configured switches.  Information displayed includes
+	     the following:
+
+	     o Basic switch settings
+	     o Overall bytes sent and received via this	switch
+	     o Physical	ports connected
+	     o Virtual ports, including	the associated virtual machine
+
+     <B>switch</B> <B>create</B> <I>name</I>
+	     Create a new virtual switch. The name must	be supplied and	may
+	     Please note that this creates a 'manual' switch and is designed
+	     to	allow you to configure your own	bridge.	None of	the <I>add</I>,
+	     <I>remove</I>, <I>vlan</I> or <I>nat</I> commands are supported	on manual switches.
+
+	     If	a manual switch	is destroyed using the <I>destroy</I> command,	we
+	     remove all	vm-bhvye configuration,	but leave the <B>bridge(4)</B>	inter-
+	     face intact.
+
+     <B>switch</B> <B>vlan</B> <I>name</I> <I>vlan-id</I>
+	     Assign a VLAN number to a virtual switch. The VLAN	number must be
+	     between 0-4094.
+
+	     When adding an interface to a VLAN	enabled	virtual	switch,	a new
+	     <B>vlan(4)</B> interface is created. This	interface has the relevent
+	     parent interface and VLAN tag configured. This vlan interface is
+	     then added	to the virtual switch. As such,	all traffic between
+	     guests on the same	switch is untagged and travels freely. How-
+	     ever, all traffic exiting via physical interfaces is tagged.
+
+	     If	the virtual switch already has physical	interfaces assigned,
+	     they are all removed from the bridge, reconfigured, then re-
+	     added.
+
+	     To	remove the VLAN	configuration from a virtual switch, specify a
+	     <I>vlan-id</I> of	0.
+
+     <B>switch</B> <B>nat</B>	<I>name</I> <I>on|off</I>
+	     Enable or disable NAT functionality on the	specified switch.
+	     Please note that pf is required for this functionality and	must
+	     be	enabled	in <I>/etc/rc.conf</I>.  If DHCP is desired, please install
+	     the dnsmasq pacakge. vm-bhyve will	generate a sample dnsmasq con-
+	     figuration	in <I>/usr/local/etc/dnsmasq.conf.bhyve</I>, but it is	up to
+	     the user to either	use this configuration directly, or merge with
+	     any existing dnsmasq settings you have configured.
+
+	     The switch	should have no host ports assigned, as these will end
+	     up	on the private side of the NAT network.	 <B>vm</B> automatically
+	     detects the hosts default gateway,	which is used as the forward-
+	     ing interface for NAT connections.
+
+	     Once enabled, a 172.16.X.0/24 network is assigned to the switch
+	     (bridge) interface.  <I>X</I> is chosen based on the ID of the bridge
+	     interface.	For example, if	the switch is using bridge10, the net-
+	     work will be 172.16.10.0/24.  dnsmasq can be used to provide DHCP
+	     to	the guests, and	pf rules are inserted to provide the NAT
+	     translation.
+
+	     <I>/etc/pf.conf</I> is created if	it doesn't exist, and a	single include
+	     statement is added. This include statement	can be moved within
+	     the file if required.
+
+     <B>switch</B> <B>add</B>	<I>name</I> <I>interface</I>
+	     any <B>vlan(4)</B> interfaces if they are	not in use by other virtual
+	     switches.
+
+     <B>create</B> [<B>-t</B>	<I>template</I>] [<B>-s</B> <I>size</I>] <I>name</I>
+	     Create a new virtual machine.
+
+	     Unless specified, the <I>default.conf</I>	template will be used and a
+	     20GB virtual disk image is	created. This command will created the
+	     virtual machine directory <I>$vm</I><B>_</B><I>dir/$name</I>, and create the configu-
+	     ration file and empty disk	image within.
+
+	     <B>-t</B>	<I>template</I>   Specifies the template to use from within the
+			   <I>$vm</I><B>_</B><I>dir/.templates</I> directory. The <B>.conf</B> suffix is
+			   not required.
+
+	     <B>-s</B>	<I>size</I>	   The size of disk image to create in GB. Unless
+			   specified, the guest	image will be a	sparse file
+			   20GB	in size.
+
+     <B>destroy</B> <I>name</I>
+	     Removes the specified virtual machine from	the system, deleting
+	     all associated disk images	&amp; configuration.
+
+     <B>list</B>
+	     List all the virtual machines in the <I>$vm</I><B>_</B><I>dir</I> directory. This will
+	     show the basic configuration for each virtual machine, and
+	     whether they are currently	running.
+
+     <B>info</B> [<I>name</I>]
+	     Shows detailed information	about the specified virtual machine.
+	     If	no name	is given, information for all virtual machines is dis-
+	     played.
+
+	     This output includes detailed information about network and disk
+	     devices, including	the space usage	for all	virtual	disks (exlud-
+	     ing custom	disk devices). If the guest is running,	the output
+	     also shows	the amount of host memory curently in use, and addi-
+	     tional network details including bytes sent/received for each
+	     virtual interface.
+
+     <B>install</B> <I>name</I> <I>iso</I>
+	     Start a guest installation	for the	named virtual machine, using
+	     the specified ISO file.  The <I>iso</I> argument should be the filename
+	     of	an ISO file already downloaded into the	<I>$vm</I><B>_</B><I>dir/.iso</I> direc-
+	     tory. ISO files in	this directory can be managed using the	<I>iso</I>
+	     subcommand	described below.
+
+	     Once started, the guest loader will be booted in the foreground.
+	     This allows you to	choose the <B>Install</B> boot	option for guests that
+	     require it. Once the loader has completed,	you will be returned
+	     to	the shell and bhyve will continue running in the background.
+	     Use the <I>console</I> subcommand	to connect to the guest	and complete
+	     <B>tap(4)</B> interface will be created. If possible, the	tap interface
+	     will be attached the relevent <B>bridge(4)</B> interface,	based on the
+	     virtual switch specified in the guest configuration.
+
+     <B>stop</B> <I>name</I>
+	     Stop a named virtual machine. All <B>tap(4)</B> and <B>nmdm(4)</B> devices will
+	     be	automatically cleaned up once the guest	has exited.
+
+     <B>console</B> <I>name</I> [<I>com1|com2</I>]
+	     Connect to	the console of the named virtual machine. Without net-
+	     work access, this is the primary way of connecting	to the guest
+	     once it is	running.
+
+	     By	default	this will connect to the first com port	specified in
+	     the client	configuration, which is	usually	com1. Alternatively
+	     you can specify the com port to connect to.
+
+	     This looks	for the	<B>nmdm(4)</B>	device associated with the virtual
+	     machine, and connects to it with <B>cu(1)</B>.  Use ~+Ctrl-D to exit the
+	     console and return	to the host.
+
+     <B>rename</B> <I>name</I> <I>new-name</I>
+	     Renames the specified virtual machine. The	guest must be stopped
+	     to	use this function.
+
+     <B>add</B> [<B>-d</B> <I>device</I>] [<B>-t</B> <I>type</I>] [<B>-s</B> <I>size|switch</I>]	<I>name</I>
+	     Add a new network or disk device to the named virtual machine.
+	     The options depend	on the type of device that is being added:
+
+	     <B>-d</B>	<I>device</I>	      The type of device to add. Currently this	can
+			      either be	<I>disk</I> or	<I>network</I>
+
+	     <B>-t</B>	<I>type</I>	      For disk devices,	this specifies the type	of
+			      disk device to create.  Valid options for	this
+			      are <I>zvol</I>,	<I>sparse-zvol</I> and	<I>file</I>.  If not speci-
+			      fied, this defaults to <I>file</I>.
+
+	     <B>-s</B>	<I>size|switch</I>   For disk devices,	this is	used to	specify	the
+			      size of the disk image to	create.	For network
+			      devices, use this	option to specify the virtual
+			      switch to	connect	the network interface to.
+
+	     For both types of device, the emulation type will be chosen auto-
+	     matically based on	the emulation used for the existing guest
+	     devices.
+
+     <B>reset</B> <I>name</I>
+	     Forcefully	reset the named	virtual	machine. This can cause	cor-
+	     ruption to	the guest file system just as with real	hardware and
+	     should only be used if necessary.
+
+     <B>poweroff</B> <I>name</I>
+	     test/un-needed guests alone)
+
+	     The delay between starting	guests can be set using	the <I>$vm</I><B>_</B><I>delay</I>
+	     variable, which defaults to 5 seconds. Too	small a	delay can
+	     cause problems, as	each guest doesn't have	enough time to claim a
+	     null modem	device before the next guest starts. Increasing	this
+	     value can be useful if you	have disk-intensive guests and want to
+	     give each guest a chance to fully boot before the next starts.
+
+     <B>stopall</B>
+	     Stop all running virtual machines.	This sends a stop command to
+	     all <B>bhyve(8)</B> instances, regardless	of whether they	were starting
+	     using <B>vm</B> or not.
+
+     <B>configure</B> <I>name</I>
+	     The <B>configure</B> command simply opens	the virtual machine configura-
+	     tion file in your default editor, allowing	you to easily make
+	     changes. Please note, changes do not take effect until the	vir-
+	     tual machine is fully shutdown and	restarted.
+
+     <B>clone</B> <I>name</I>	<I>new-name</I>
+	     Create a clone of the virtual machine <I>name</I>, as long as it is cur-
+	     rently powered off. The new machine will be called	<I>new-name</I>, and
+	     will be ready to boot with	a newly	assigned UUID and empty	log
+	     file.
+
+	     Please note that this function requires ZFS, and a	snapshot will
+	     be	taken of the original guest, along with	any descendant
+	     datasets.
+
+     <B>snapshot</B> [<B>-f</B>] <I>name|name@snapshot</I>
+	     Create a snapshot of the names virtual machine. This command is
+	     only supported with ZFS and will take a snapshot of the guest
+	     dataset and any descendent	ZVOL devices.
+
+	     The guest and snapshot name can be	specified in the normal
+	     <I>name@snapshot</I> way familiar	to ZFS users. If no snapshot name is
+	     given, the	snapshot is based on the current timestamp in
+	     <I>Y-m-d-H:M:S</I> format.
+
+	     By	default	the guest must be stopped to use this command,
+	     although you can force a snapshot of a running guest by using the
+	     <B>-f</B>	option.
+
+     <B>rollback</B> [<B>-r</B>] <I>name@snapshot</I>
+	     Rollback the guest	to the specified snapshot. This	will roll back
+	     the guest dataset and all descendent ZVOL devices.
+
+	     Normally, ZFS will	only allow you to roll back to the most	recent
+	     snapshot.	If the snapshot	given is not the most recent, ZFS will
+	     produce a warning detailing that you need to use the <B>-r</B> option to
+	     remove the	more recent snapshots. It will also produce a list of
+	     List available images. Any	virtual	machine	can be packaged	into
+	     an	image, which can then be used to create	additional machines.
+	     All images	have a globally	unique ID (UUID) which is used to
+	     identify them. The	list command shows the UUID, the original
+	     machine name, the date it was created and a short description of
+	     the image.
+
+	     Please note that these commands rely on using ZFS featured	to
+	     package/unpackage the images, and as such are only	available when
+	     using a ZFS dataset as the	storage	location.
+
+     <B>image</B> <B>create</B> [<B>-d</B> <I>description</I>] <I>name</I>
+	     Create a new image	from the named virtual machine.	This will cre-
+	     ate a compressed copy of the original guest dataset, which	is
+	     stored in the <I>$vm</I><B>_</B><I>dir/images</I> directory. It	also creates a
+	     <I>UUID.manifest</I> file	which contains details about the image.
+
+	     Once complete, it will display the	UUID which has been assigned
+	     to	this image.
+
+     <B>image</B> <B>provision</B> <I>uuid</I> <I>new-name</I>
+	     Create a new virtual machine, named <I>new-name</I>, from	the specified
+	     image UUID.
+
+     <B>image</B> <B>destroy</B> <I>uuid</I>
+	     Destroy the specified image.
+
+
+</PRE>
+<H2>CONFIGURATION FORMAT</H2><PRE>
+     Each virtual machine has a	configuration file that	specifies the hardware
+     configuration. This uses a	similar	format to the <B>rc</B> files,	making them
+     easy to edit by hand. The settings	for each guest are stored in
+     <I>$vm</I><B>_</B><I>dir/$vm</I><B>_</B><I>name/$vm</I><B>_</B><I>name.conf</I>.  An overview of the available configura-
+     tion options is listed below.
+
+     guest		Specify	the type of guest to be	installed in this vir-
+			tual machine. Current valid options for	this are
+			generic, freebsd, netbsd, openbsd, windows, centos,
+			ubuntu,	debian &amp; alpine	linux.
+
+     uefi		Set this (any non-empty	value) for guests that need
+			UEFI firmware.
+
+     cpu		A numeric value	specifying the number of virtual CPU
+			cores to assign	to the guest.
+
+     memory		The amount of memory to	assign to the guest. This can
+			be specified in	megabytes or gigabytes using the <B>M</B> and
+			<B>G</B> suffixes.
+
+     hostbridge		This option allows you to specify the type of host-
+			bridge used for	the guest hardware.  Normally you can
+			leave this as default, which is	to use a standard
+     utctime		Set this option	to <B>yes</B> if the guest RTC	should keep
+			UTC time.
+
+     debug		If this	is set to <B>yes</B>, all output from the <B>bhyve(8)</B>
+			process	will be	written	to <B>${vm_dir}/guest/bhyve.log</B>.
+			This is	useful for debugging purposes as it allows you
+			to see any error messages that are being produced by
+			<B>bhyve(8)</B> itself.
+
+     network0_type	The emulation to use for the first network adapter.
+			This option can	be unspecified if no guest networking
+			is required. The recommended value for this is
+			<B>virtio-net</B>.  Additional	network	interfaces can be con-
+			figured	by adding additional <B>networkX_type</B> and
+			<B>networkX_switch</B>	values,	replacing <B>X</B> with the next
+			available integer.
+
+     network0_switch	The virtual switch to connect interface	<B>0</B> to. This
+			should correspond to a virtual switch created using
+			the <I>vm</I> <I>switch</I> <I>create</I> subcommand. If the	virtual	switch
+			is not found, an interface will	still be assigned, but
+			not connected to any bridge.
+
+			Note that this field is	no longer strictly required.
+			If you are using a custom device for the networking
+			that is	already	configured, you	may not	need the
+			interface connected to a virtual switch. See the
+			<B>network0_device</B>	configuration option.
+
+     network0_device	Normally vm-bhyve will create a	<B>tap(4)</B> device at run-
+			time for each virtual network interface. This may be
+			an issue in more advanced configurations where you
+			want to	pre-configure the networking manually in a way
+			unsupported by vm-bhyve. This option allows you	to
+			instruct vm-bhyve to use an existing network device
+			for this virtual interface, rather than	creating one
+			dynamically.
+
+     network0_mac	This option allows you to specify a mac	address	to use
+			for this interface. If not provided, <B>bhyve(8)</B> will
+			generate a mac address.
+
+     disk0_type		The emulation type for the first virtual disk. At
+			least one virtual disk is required.  Valid options for
+			this are currently <B>virtio-blk</B> and <B>ahci-hd</B>.  Additional
+			disks can be added by adding additional	<B>diskX_type</B> and
+			<B>diskX_name</B> values, replacing <B>X</B> with the	next available
+			integer.
+
+     disk0_name		The filename for the first virtual disk. The first
+			disk is	created	automatically when provisioning	a new
+			virtual	machine. If additional disks are added manu-
+			which will used	a ZVOL as the disk image, created
+			directly under the guest dataset.  Alternatively you
+			can specify <B>custom</B>, in which case <I>diskX</I><B>_</B><I>name</I> should be
+			the full path to the image file	or device.
+
+     disk0_opts		Any additional options to use for this disk device.
+			Multiple options can be	specified, separated by	a
+			comma. Please see the <B>bhyve(8)</B> man page	for more
+			details	on supported options.
+
+     uuid		This option allows you to specify a fixed UUID for the
+			guests SMBIOS. Normally, the UUID is generated by
+			<B>bhyve(8)</B> based on the hostname and guest name. Because
+			this may change	if guests are moved between systems,
+			the <I>vm</I> <I>create</I> command automatically assigns a UUID to
+			all newly created guests.
+
+     passthruX		Specify	a device to pass through to the	guest. You
+			will need to reserve the device	first so that is it
+			claimed	by the ppt driver on boot.
+
+			Once the device	is successfully	reserved, you can add
+			it to the guest	by adding <B>passthruX="1/2/3"</B> to the
+			guest configuration file, where	<B>X</B> is an	integer	start-
+			ing at 0, and <B>1/2/3</B> is the Base/Slot/Function of the
+			device.	If you are passing through multiple functions
+			on the same device, make sure they are specified
+			together in the	configuration file in the same
+			sequence as the	original device.
+
+			Please see https://wiki.freebsd.org/bhyve/pci_passthru
+			for more details on how	this works.
+
+     virt_random	Set this option	to <B>yes</B> if you want to create a
+			<B>virtio-rnd</B> device for this guest.
+
+     grub_commands	Sometimes you may need to provide grub commands	that
+			differ from those generated by <I>vm-bhyve</I>.  In this
+			case, create a text file inside	the guest's directory
+			containing the commands	you need to run. Usually the
+			last entry in the file should be <I>boot</I>, followed	by a
+			newline. The newline is	important, otherwise the last
+			command	may not	actually be executed.
+
+			Once you have created the file,	set this option	to the
+			name of	the file. From that point on, during a normal
+			boot <I>vm-bhyve</I> will use the commands from this file
+			rather than attempting to generate them	automatically.
+
+     zfs_dataset_opts	This allows you	to specify one or more ZFS properties
+			to set on the dataset when a guest is created. Because
+			properties are assigned	as the dataset is created,
+			ation time.
+
+			Multiple properties can	be specified, separated	by a
+			space. For example, the	following will configure the
+			ZVOL block size	to 128k, and turn compression off.
+
+			zfs_zvol_opts="volblocksize=128k compress=off"
+
+     linux_kernel	CentOS guests require the kernel to be loaded inside
+			the boot loader. This option is	required for these
+			guests and specifies the kernel	version	number to
+			load. Hopefully	this requirement will be relaxed as
+			<B>bhyve(8)</B> development continues.
+
+
+</PRE>
+<H2>SEE ALSO</H2><PRE>
+     <B>bhyve(8)</B>, <B>bhyveload(8)</B>, <B>tap(4)</B>, <B>bridge(4)</B>,	<B>vlan(4)</B>, <B>nmdm(4)</B>, <B>cu(1)</B>,
+     <B>fetch(1)</B>, <B>truncate(1)</B>, <B>zfs(8)</B>
+
+
+</PRE>
+<H2>BUGS</H2><PRE>
+     Please report all bugs/issues/feature requests to the github project at
+     <a href="https://github.com/churchers/vm-bhyve">https://github.com/churchers/vm-bhyve</a>
+
+
+</PRE>
+<H2>AUTHOR</H2><PRE>
+     Matt Churchyard &lt;<I>churchers@gmail.com</I>&gt;
+
+FreeBSD	10.2			 Oct 27, 2015			  FreeBSD 10.2
+</PRE>
+<HR>
+<ADDRESS>
+Man(1) output converted with
+<a href="http://www.oac.uci.edu/indiv/ehood/man2html.html">man2html</a>
+</ADDRESS>
+</BODY>
+</HTML>
