@@ -31,7 +31,7 @@ if (isset ($_POST["submit1"]) && $_POST["submit1"] =="Save") {
 		    for ($i; $i < count($config['rc']['postinit']['cmd']);) {
 		    if (preg_match('|ext\/bhyve/|', $config['rc']['postinit']['cmd'][$i])) 	break;
 				++$i;	} 	
-			$config['rc']['postinit']['cmd'][$i] = $config['bhyve']['homefolder']."/bin/bhyve_start.php";	
+			$config['rc']['postinit']['cmd'][$i] = $config['bhyve']['homefolder']."/conf/bin/bhyve_start.php";	
 				}
 			
 			write_config();
