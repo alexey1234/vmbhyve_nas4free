@@ -29,13 +29,19 @@ PATH=${PATH}:/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin
 BSD_VERSION=$(uname -K)
 
 . /etc/rc.subr
+. /etc/configxml.subr
+
 load_rc_config "vm"
 
+#Nas4Free extension
+homefolder=`configxml_get "//bhyve/homefolder"`
 # get libs
 if [ -e "./lib/vm-core" ]; then
     LIB="./lib"
 elif [ -e "/usr/local/lib/vm-bhyve" ]; then
     LIB="/usr/local/lib/vm-bhyve"
+elif [ -e "${homefolder}/conf/lib" ]; then
+    LIB="${homefolder}/conf/lib"
 else
     echo "unable to locate vm-bhyve libriaries"
     exit 1

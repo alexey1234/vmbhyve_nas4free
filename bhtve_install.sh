@@ -60,7 +60,6 @@ fi
 # Make and move into the install staging folder
 mkdir -p ${START_FOLDER}/install_stage || exerr "ERROR: Could not create staging directory!"
 cd ${START_FOLDER}/install_stage || exerr "ERROR: Could not access staging directory!"
-STAGE_BIN_PATH=${START_FOLDER}/install_stage/conf/bin
 
 echo "Retrieving the vmbhyve_nas4free branch as a zip file"
 fetch https://github.com/alexey1234/vmbhyve_nas4free/archive/master.zip || exerr "ERROR: Could not write to install directory!"
@@ -98,11 +97,11 @@ else
 			# Create link
 			ln -s "$file" "${file##*/}"
 		done
-	# Store the install destination into the /tmp/bhyve.install
-	echo ${EXTENSION_ROOT} > /tmp/bhyve.install
 	echo "Congratulations! The Bhyve extension was installed. Navigate to rudimentary config tab and push Save."
 	ACTION_MSG="fresh installed"
 fi
+# Store the install destination into the /tmp/bhyve.install
+echo ${EXTENSION_ROOT} > /tmp/bhyve.install
 # Get rid of staged updates & cleanup
 cd ${START_FOLDER}
 rm -rf install_stage

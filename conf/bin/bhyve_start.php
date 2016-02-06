@@ -8,14 +8,10 @@ header("content-type: none");
 header_remove("content-type");
 require_once ("config.inc");
 if ( ! is_array($config['bhyve']) ) {echo "Bhyve not set\n"; exit;}
-unlink_if_exists("/usr/local/etc/rc.d/vm");
-if ( ! symlink ( $config['bhyve']['homefolder']."/conf/rc.d/vm", "/etc/rc.d/vm"))  exec ("logger Failed copy rc script"); 
-//chmod("/usr/local/etc/rc.d/vm", 0755);
-unlink_if_exists("/usr/local/sbin/vm");
+if (is_link("/usr/local/etc/rc.d/vm")) unlink ("/usr/local/etc/rc.d/vm") ;
+if ( ! symlink ( $config['bhyve']['homefolder']."/conf/rc.d/vm", "/usr/local//etc/rc.d/vm"))  exec ("logger Failed copy rc script"); 
+if (is_link("/usr/local/sbin/vm")) unlink ("/usr/local/sbin/vm") ;
 if ( ! symlink ( $config['bhyve']['homefolder']."/conf/bin/vm", "/usr/local/sbin/vm")) exec ("logger Failed copy binary vm"); 
-//chmod("/usr/local/bin/vm", 0755);
-unlink_if_exists("/usr/local/lib/vm-bhyve");
-if ( ! symlink ( $config['bhyve']['homefolder']."/conf/lib", "/usr/local/lib/vm-bhyve")) exec ("logger Failed copy vm libs"); 
 
 if ( is_dir( '/usr/local/www/ext/bhyve') ) {
 	exec ( "rm -rf /usr/local/www/ext/bhyve");

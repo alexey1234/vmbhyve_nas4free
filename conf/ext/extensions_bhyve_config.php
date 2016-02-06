@@ -35,44 +35,38 @@ if (isset ($_POST["submit1"]) && $_POST["submit1"] =="Save") {
 				}
 			
 			write_config();
-			unlink_if_exists("/tmp/bhyve.install");
-			unlink_if_exists ( "/usr/local/www/extensions_bhyve.php");
-			symlink ( $config['bhyve']['homefolder']."/conf/ext/extensions_bhyve.php" , "/usr/local/www/services_bhyve.php" );
-			unlink_if_exists ( "/usr/local/www/extensions_bhyve_config.php");
-			symlink ( $config['bhyve']['homefolder']."/conf/ext/extensions_bhyve_config.php" , "/usr/local/www/extensions_bhyve_config.php" );
-			unlink_if_exists ( "/usr/local/www/extensions_bhyve_functions.php");
-			symlink ( $config['bhyve']['homefolder']."/conf/ext/extensions_bhyve_functions.php" , "/usr/local/www/_functions" );
-			unlink_if_exists ( "/usr/local/www/extensions_bhyve_config.php");
-			symlink ( $config['bhyve']['homefolder']."/conf/ext/extensions_bhyve_config.php" , "/usr/local/www/extensions_bhyve_config.php" );
-			if ( !is_link ( "/etc/rc.d/bhyve") || !is_file ( "/etc/rc.d/bhyve")) { symlink ( $config['bhyve']['homefolder']."/ext/bhyve.sh" , "/etc/rc.d/bhyve" );}
-			unlink_if_exists ( "/usr/local/www/status_services.php");
-			symlink ( $config['bhyve']['homefolder']."/ext/bhyve/status_services.php" , "/usr/local/www/status_services.php" );
-			unlink_if_exists ( "/usr/local/www/fbegin.inc");
-			symlink ( $config['bhyve']['homefolder']."/ext/bhyve/fbegin.inc" , "/usr/local/www/fbegin.inc" );
-			unlink_if_exists ( "/etc/rc.d/mdnsresponder");
-			symlink ( $config['bhyve']['homefolder']."/ext/bhyve/mdnsresponder" , "/etc/rc.d/mdnsresponder" );
-			header("Location: services_bhyve.php");
+			unlink_if_exists("/tmp/bhyve.install");			
+			unlink_if_exists ( "/usr/local/etc/rc.d/vm");
+			symlink ( $config['bhyve']['homefolder']."/conf/rc.d/vm" , "/usr/local/etc/rc.d/vm" );
+			unlink_if_exists ( "/usr/local/sbin/vm");
+			symlink ( $config['bhyve']['homefolder']."/conf/bin/vm" , "/usr/local/sbin/vm" );
+			header("Location: extensions_bhyve.php");
 						exit;
 }	elseif (isset($_POST['submit1']) && ($_POST['submit1'] == "Uninstall")) {
 		//uninstall procedure
-			 rc_stop_service('bhyve');
+			 //rc_stop_service('bhyve');
 	
-		if ( is_array($config['rc']['postinit'] ) && is_array( $config['rc']['postinit']['cmd'] ) ) {
+			if ( is_array($config['rc']['postinit'] ) && is_array( $config['rc']['postinit']['cmd'] ) ) {
 			for ($i = 0; $i < count($config['rc']['postinit']['cmd']);) {
 				if (preg_match('/bhyve_start/', $config['rc']['postinit']['cmd'][$i])) {	unset($config['rc']['postinit']['cmd'][$i]);} else{}
 				++$i;
 			  }
 		    }
-		if ( is_link ( "/etc/rc.d/bhyve") ) { 	unlink("/etc/rc.d/bhyve"); }
-//remowe web pages
-		if (is_dir ("/usr/local/www/ext/bhyve")) mwexec ("rm -rf /usr/local/www/ext/bhyve");
-		    
-	    
+			unlink_if_exists("/usr/local/etc/rc.d/vm");
+			unlink_if_exists("/usr/local/sbin/vm");
+			mwexec ("rm -f /usr/local/www/ext/bhyve");
+		
+//remove web pages
+			unlink_if_exists ( "/usr/local/www/extensions_bhyve.php");
+			unlink_if_exists ( "/usr/local/www/extensions_bhyve_config.php");   
+			unlink_if_exists ( "/usr/local/www/extensions_bhyve_manual.php");
 //remove bhyve section from config.xml
-		if ( is_array($config['bhyve'] ) ) { unset( $config['bhyve'] ); write_config();}
-		header("Location: /");
-		exit;
-		} elseif  (! is_file("/tmp/bhyve.install"))   {
+			if ( is_array($config['bhyve'] ) ) { 
+				unset( $config['bhyve'] ); write_config();
+				header("Location: /");
+				exit;
+				} 
+}	elseif  (! is_file("/tmp/bhyve.install"))   {
 unlink_if_exists ("/tmp/extensions_bhyve_config.php");
 $connected = @fsockopen("www.github.com", 80); 
 if ( $connected ) {
@@ -81,7 +75,7 @@ if ( $connected ) {
 	$gitconfigfile = file_get_contents("https://raw.githubusercontent.com/alexey1234/vmbhyve_nas4free/master/conf/ext/extensions_bhyve_config.php");
 	$git_ver = preg_split ( "/bhyve_VERSION,/", $gitconfigfile);
 	$git_ver = 0 + $git_ver[1];
-	mwexec2 ( "fetch {$fetch_args} -o /tmp/install.sh https://raw.githubusercontent.com/alexey1234/bhyve-nas4free/simple/install.sh" , $garbage , $fetch_ret_val ) ;
+	mwexec2 ( "fetch {$fetch_args} -o /tmp/install.sh https://raw.githubusercontent.com/alexey1234/vmbhyve_nas4free/master/bhtve_install.sh" , $garbage , $fetch_ret_val ) ;
 				if ( is_file("/tmp/install.sh" ) ) {
 					// Fetch of install.sh succeeded
 					mwexec ("chmod a+x /tmp/install.sh");
