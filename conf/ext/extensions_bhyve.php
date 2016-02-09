@@ -12,6 +12,7 @@ if ( !isset( $config['bhyve']['homefolder']) ) {
 		exit;
 	} else { $input_errors[] = "Bhive not installed"; }
 }
+include_once($config['bhyve']['homefolder']."/conf/ext/extensions_bhyve_functions.inc");
 if ($_POST) {
 		if (isset($_POST['Submit']) && $_POST['Submit'] == "Save") {
 		//check errors section here
@@ -39,15 +40,42 @@ if ($_POST) {
 $pconfig['enable'] = isset($config['bhyve']['enable']);
 include("fbegin.inc");
 ?>
-<script type="text/javascript">
-<!--
-$(document).ready(function(){
-    $('#enable').change(function(){
-      $('#submit').toggle(this.changed);
-    }).change();
+<script type="text/javascript">//<![CDATA[
 
-});
-//-->
+
+$(document).ready(function(){
+	var gui = new GUI;
+	$('#work_dir').change(function(){
+		switch ($('#work_dir').val()) {
+		case "0":
+			$('#work_dir_simple_tr').show();
+			$('#work_dir_zfs_tr').hide();
+			$('#work_dir_diff_tr').hide();
+			break;
+		
+		case "1":
+			$('#work_dir_simple_tr').hide();
+			$('#work_dir_zfs_tr').show();
+			$('#work_dir_diff_tr').hide();
+			break;
+		case "2":
+			$('#work_dir_simple_tr').hide();
+			$('#work_dir_zfs_tr').hide();
+			$('#work_dir_diff_tr').show();
+			break;
+		default:
+			$('#work_dir_simple_tr').show();
+			$('#work_dir_zfs_tr').hide();
+			$('#work_dir_diff_tr').hide();
+			break;
+		}
+	}).change();
+ });
+
+ function clickfix() {
+	if (! clickfix) $('#submit').hide(); else $('#submit').show();
+}
+//]]>
 </script>
 <table width="100%" border="0" cellpadding="0" cellspacing="0" >
 	<tr><td class="tabnavtbl">
@@ -68,7 +96,30 @@ $(document).ready(function(){
 			<?php if (updatenotify_exists("vm")) print_config_change_box();?>
 			<table width="100%" border="0" cellpadding="6" cellspacing="0">
 			
-				<?php html_titleline_checkbox("enable", "Bhyve virtual machines", $pconfig['enable'], gettext("Enable"), "" ); ?>
+				<?php html_titleline_checkbox("enable", "Bhyve virtual machines", $pconfig['enable'], gettext("Enable"), "clickfix(true)" ); ?>
+				<tr id='work_dir_tr'>
+					<td width='22%' valign='top' class='vncell'><label for=''>Working folder</label></td>
+					<td width='78%' class='vtable'>
+					
+					<select name='work_dir' class='formfld' id='work_dir' onchange="clickfix(true)">
+														<option value='0' >Home</option>
+														<?php if (true == bhyve_zfs_check()):?>
+														<option value='1' >Dataset</option>
+														<?php endif;?>
+														<option value='2' >Different folder</option>
+													</select>						
+						</td>
+
+					
+				</tr>
+				<?php html_text("work_dir_simple", "", "Virtual machines will store at extension home folder");?>
+				<?php if ( FALSE !== ($datasets_list = bhyve_datasets_list())) {
+					for ($i = 0; $i < count($datasets_list); ++$i) { 
+					$a_datasets_list[] = $datasets_list[$i][1];
+					}
+				html_combobox("work_dir_zfs", "", $pconfig['work_dir_zfs'], $a_datasets_list, "Virtual machines will store on dataset", false, false, "clickfix(true)"); }?> 
+				<?php html_filechooser('work_dir_diff', "", $pconfig['work_dir_diff'], "Virtual machines will store on any different folder", "/mnt", false, "67", false); ?> 
+				<?php html_combobox("delay", "Delay on boot",$pconfig['delay'], array ("1","2","3","4","5","6","7","8"), "Choise delay time between start machines at boot stage", false, "3", false, "clickfix(true)");?>
 			</table>
 			<div id="submit">
 					<input name="Submit" type="submit" class="formbtn" value="Save"  />
@@ -79,5 +130,5 @@ $(document).ready(function(){
 	</tr>
 </table>
 <?php 
-print $statusvmprint;
+//print_r ($datasets_list);
 include("fend.inc"); ?>
