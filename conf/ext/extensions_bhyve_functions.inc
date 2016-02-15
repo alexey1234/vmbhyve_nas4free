@@ -88,6 +88,16 @@ class HTMLOptionsBox extends HTMLBaseControl {
 		}
 	}
 }
+class HTMLInterfaceComboBox1 extends HTMLComboBox {
+	function __construct($ctrlname, $title, $value, $description) {
+		global $config;
+
+		// Generate options.
+		$options = array_keys(get_interface_list());
+		
+		parent::__construct($ctrlname, $title, $value, $options, $description);
+	}
+}
 function html_optionsbox($ctrlname, $title, $value, $j_opt, $required = false, $readonly = false) {
 	$ctrl = new HTMLOptionsBox($ctrlname, $title, $value);
 	//$ctrl->GetOptions($options);
@@ -96,7 +106,12 @@ function html_optionsbox($ctrlname, $title, $value, $j_opt, $required = false, $
 	$ctrl->SetReadOnly($readonly);
 	$ctrl->Render();
 }
-
+function html_bhyveinterfacecombobox($ctrlname, $title, $value, $desc, $required = false, $readonly = false) {
+	$ctrl = new HTMLInterfaceComboBox1($ctrlname, $title, $value, $desc);
+	$ctrl->SetRequired($required);
+	$ctrl->SetReadOnly($readonly);
+	$ctrl->Render();
+}
 // cmd_exec execute process and have output and error
 //$cmd - proccess 
 //$stdout - result
@@ -167,4 +182,15 @@ function bhyve_datasets_list() {
 	return $datasets_list;
 	} else { return false; }
 }
+function bhyve_pci_devices() {
+	$a_device = array();
+	$a_device['none'] = 'none';
+	cmd_exec("pciconf -l | awk '{print $1}' | awk -F '@pci0:' '{print $2}'",$devices, $errors);
+	foreach ($devices as $device) {
+		$device = rtrim(preg_replace("/:/", "/", $device));
+		$a_device[rtrim($device, '/')] = rtrim($device, '/');
+	}
+	return $a_device;
+}
+
 ?>
